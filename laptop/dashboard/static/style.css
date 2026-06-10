@@ -1,0 +1,241 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f1923;
+    color: #e0e0e0;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #1e2d3d;
+}
+
+header h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.badge {
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.badge-safe {
+    background: #27ae60;
+    color: #fff;
+}
+
+.badge-warning {
+    background: #f39c12;
+    color: #000;
+}
+
+.badge-alarm {
+    background: #e74c3c;
+    color: #fff;
+}
+
+.main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 900px) {
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.card {
+    background: #1a2736;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #253544;
+}
+
+.card h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #8899aa;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+}
+
+.camera-wrapper {
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    aspect-ratio: 16/9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.camera-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.detection-list {
+    margin-top: 12px;
+    min-height: 32px;
+}
+
+.detection-none {
+    color: #556677;
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+.detection-item {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.detection-fire {
+    background: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+    border: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+.detection-smoke {
+    background: rgba(149, 165, 166, 0.2);
+    color: #bdc3c7;
+    border: 1px solid rgba(149, 165, 166, 0.3);
+}
+
+.sensor-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.sensor-box {
+    background: #0f1923;
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+    border: 1px solid #253544;
+}
+
+.sensor-label {
+    font-size: 0.75rem;
+    color: #667788;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.sensor-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.sensor-unit {
+    font-size: 0.8rem;
+    color: #556677;
+    margin-top: 4px;
+}
+
+#temp-box .sensor-value { color: #e74c3c; }
+#hum-box .sensor-value { color: #3498db; }
+#gas-box .sensor-value { color: #f39c12; }
+
+.traffic-light {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.light {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #1e2d3d;
+    border: 2px solid #253544;
+    transition: all 0.3s;
+}
+
+.light.red.active {
+    background: #e74c3c;
+    box-shadow: 0 0 20px rgba(231, 76, 60, 0.5);
+    border-color: #e74c3c;
+}
+
+.light.yellow.active {
+    background: #f39c12;
+    box-shadow: 0 0 20px rgba(243, 156, 18, 0.5);
+    border-color: #f39c12;
+}
+
+.light.green.active {
+    background: #27ae60;
+    box-shadow: 0 0 20px rgba(39, 174, 96, 0.5);
+    border-color: #27ae60;
+}
+
+.buzzer-indicator {
+    text-align: center;
+    padding: 8px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    background: #0f1923;
+    border: 1px solid #253544;
+    color: #667788;
+    transition: all 0.3s;
+}
+
+.buzzer-indicator.active {
+    color: #f39c12;
+    border-color: #f39c12;
+    background: rgba(243, 156, 18, 0.1);
+}
+
+.chart-card {
+    margin-bottom: 20px;
+}
+
+.chart-container {
+    height: 250px;
+}
+
+footer {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 16px;
+    border-top: 1px solid #1e2d3d;
+    font-size: 0.8rem;
+    color: #445566;
+}

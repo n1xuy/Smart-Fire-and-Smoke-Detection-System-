@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Fire & Smoke Detector</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Smart Fire & Smoke Detector</h1>
+            <span id="status-badge" class="badge badge-safe">SAFE</span>
+        </header>
+
+        <div class="main-grid">
+            <div class="card camera-card">
+                <h2>Camera Feed</h2>
+                <div class="camera-wrapper">
+                    <img id="camera-feed" src="" alt="Waiting for camera feed...">
+                </div>
+                <div id="detection-list" class="detection-list"></div>
+            </div>
+
+            <div class="card sensors-card">
+                <h2>Sensor Data</h2>
+                <div class="sensor-grid">
+                    <div class="sensor-box" id="temp-box">
+                        <div class="sensor-label">Temperature</div>
+                        <div class="sensor-value" id="temp-value">--</div>
+                        <div class="sensor-unit">&deg;C</div>
+                    </div>
+                    <div class="sensor-box" id="hum-box">
+                        <div class="sensor-label">Humidity</div>
+                        <div class="sensor-value" id="hum-value">--</div>
+                        <div class="sensor-unit">%</div>
+                    </div>
+                    <div class="sensor-box" id="gas-box">
+                        <div class="sensor-label">Gas Level</div>
+                        <div class="sensor-value" id="gas-value">--</div>
+                        <div class="sensor-unit">ppm</div>
+                    </div>
+                </div>
+
+                <div class="traffic-light">
+                    <div class="light red" id="light-red"></div>
+                    <div class="light yellow" id="light-yellow"></div>
+                    <div class="light green" id="light-green"></div>
+                </div>
+
+                <div class="buzzer-indicator" id="buzzer-indicator">Buzzer: OFF</div>
+            </div>
+        </div>
+
+        <div class="card chart-card">
+            <h2>History (last 60s)</h2>
+            <div class="chart-container">
+                <canvas id="sensor-chart"></canvas>
+            </div>
+        </div>
+
+        <footer>
+            <span>Smart Fire & Smoke Detector v1.0</span>
+            <span id="connection-status">Connected</span>
+        </footer>
+    </div>
+
+    <script>
+        const MAX_POINTS = 60;
+        const tempData = [];
+        const humData = [];
+        const gasData = [];
+        const labels = [];
+
+        const ctx = document.getElementById('sensor-chart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Temperature (°C)',
+                        data: tempData,
+                        borderColor: '#e74c3c',
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        yAxisID: 'y',
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Humidity (%)',
+                        data: humData,
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        yAxisID: 'y',
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Gas Level',
+                        data: gasData,
+                        borderColor: '#f39c12',
+                        backgroundColor: 'rgba(243, 156, 18, 0.1)',
+                        yAxisID: 'y1',
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: { display: true, text: 'Temp / Humidity' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: { display: true, text: 'Gas' },
+                        grid: { drawOnChartArea: false }
+                    }
+                }
+            }
+        });
+
+        function updateBadge(state) {
+            const badge = document.getElementById('status-badge');
+            badge.className = 'badge';
+            if (state === 0) {
+                badge.classList.add('badge-safe');
+                badge.textContent = 'SAFE';
+            } else if (state === 1) {
+                badge.classList.add('badge-warning');
+                badge.textContent = 'WARNING';
+            } else {
+                badge.classList.add('badge-alarm');
+                badge.textContent = 'ALARM';
+            }
+        }
+
+        function updateTrafficLight(state) {
+            document.getElementById('light-red').classList.remove('active');
+            document.getElementById('light-yellow').classList.remove('active');
+            document.getElementById('light-green').classList.remove('active');
+            if (state === 0) {
+                document.getElementById('light-green').classList.add('active');
+            } else if (state === 1) {
+                document.getElementById('light-yellow').classList.add('active');
+            } else {
+                document.getElementById('light-red').classList.add('active');
+            }
+        }
+
+        function updateBuzzer(buzzer) {
+            const el = document.getElementById('buzzer-indicator');
+            if (buzzer === 1) {
+                el.textContent = 'Buzzer: ON';
+                el.classList.add('active');
+            } else if (buzzer === 2) {
+                el.textContent = 'Buzzer: INTERMITTENT';
+                el.classList.add('active');
+            } else {
+                el.textContent = 'Buzzer: OFF';
+                el.classList.remove('active');
+            }
+        }
+
+        function updateDetections(detections) {
+            const list = document.getElementById('detection-list');
+            if (!detections || detections.length === 0) {
+                list.innerHTML = '<div class="detection-none">No fire/smoke detected</div>';
+                return;
+            }
+            list.innerHTML = detections.map(d =>
+                `<div class="detection-item detection-${d.label}">
+                    ${d.label.toUpperCase()} — ${(d.confidence * 100).toFixed(0)}%
+                </div>`
+            ).join('');
+        }
+
+        const evtSource = new EventSource('/stream');
+        evtSource.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+
+            document.getElementById('temp-value').textContent = data.temperature !== '--' ? data.temperature.toFixed(1) : '--';
+            document.getElementById('hum-value').textContent = data.humidity !== '--' ? data.humidity.toFixed(1) : '--';
+            document.getElementById('gas-value').textContent = data.gas !== '--' ? data.gas : '--';
+
+            updateBadge(data.state);
+            updateTrafficLight(data.state);
+            updateBuzzer(data.buzzer);
+            updateDetections(data.detections);
+
+            if (data.frame) {
+                document.getElementById('camera-feed').src = 'data:image/jpeg;base64,' + data.frame;
+            }
+
+            const now = new Date().toLocaleTimeString();
+            labels.push(now);
+            const t = typeof data.temperature === 'number' ? data.temperature : null;
+            const h = typeof data.humidity === 'number' ? data.humidity : null;
+            const g = typeof data.gas === 'number' ? data.gas : null;
+            tempData.push(t);
+            humData.push(h);
+            gasData.push(g);
+
+            if (labels.length > MAX_POINTS) {
+                labels.shift();
+                tempData.shift();
+                humData.shift();
+                gasData.shift();
+            }
+
+            chart.update('none');
+        };
+
+        evtSource.onerror = function() {
+            document.getElementById('connection-status').textContent = 'Disconnected';
+            document.getElementById('connection-status').style.color = '#e74c3c';
+        };
+    </script>
+</body>
+</html>
