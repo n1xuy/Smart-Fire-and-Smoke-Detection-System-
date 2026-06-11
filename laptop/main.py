@@ -1,7 +1,7 @@
 import time
 import threading
 from config import STATE_SAFE, STATE_WARNING, STATE_ALARM
-from serial_handler import SerialHandler
+from mqtt_handler import MqttHandler
 from decision_engine import DecisionEngine
 from vision_engine import VisionEngine
 from logger import Logger
@@ -9,7 +9,7 @@ from dashboard.app import start_dashboard
 
 class SmartDetectorApp:
     def __init__(self):
-        self.serial = SerialHandler()
+        self.mqtt = MqttHandler()
         self.decision = DecisionEngine()
         self.vision = VisionEngine()
         self.logger = None
@@ -28,8 +28,8 @@ class SmartDetectorApp:
     def start(self):
         print("[App] Starting Smart Fire & Smoke Detector...")
 
-        if not self.serial.connect():
-            print("[App] Serial connection failed. Continuing without ESP32.")
+        if not self.mqtt.connect():
+            print("[App] MQTT connection failed. Continuing without ESP32.")
 
         if not self.vision.start():
             print("[App] Camera failed. Continuing without vision.")
@@ -51,7 +51,7 @@ class SmartDetectorApp:
         while self._running:
             try:
                 self.vision.update()
-                sensor = self.serial.get_data()
+                sensor = self.mqtt.get_data()
                 detections = self.vision.get_detections()
                 frame_jpeg = self.vision.get_frame_jpeg()
 
@@ -67,7 +67,7 @@ class SmartDetectorApp:
                 self.shared_data["frame_jpeg"] = frame_jpeg
 
                 if self.decision.state_changed():
-                    self.serial.send_command(led, buzzer)
+                    self.mqtt.send_command(led, buzzer)
                     state_name = self.decision.get_state_name(state)
                     print(f"[App] State changed to {state_name}")
 
@@ -87,7 +87,7 @@ class SmartDetectorApp:
     def _cleanup(self):
         print("[App] Shutting down...")
         self.vision.stop()
-        self.serial.close()
+        self.mqtt.close()
         if self.logger:
             self.logger.close()
 

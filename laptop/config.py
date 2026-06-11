@@ -1,7 +1,13 @@
 import os
 
-SERIAL_PORT = "COM4"
-SERIAL_BAUD = 115200
+WIFI_SSID = "YOUR_WIFI_SSID"
+WIFI_PASS = "YOUR_WIFI_PASSWORD"
+
+MQTT_BROKER = "broker.emqx.io"
+MQTT_PORT = 1883
+MQTT_TOPIC_SENSOR = "smoke_detector/esp32/sensor"
+MQTT_TOPIC_CONTROL = "smoke_detector/esp32/control"
+MQTT_CLIENT_ID = "laptop_ai_host"
 
 CAMERA_ID = 0
 YOLO_FRAME_INTERVAL = 5
@@ -12,6 +18,7 @@ THRESHOLDS = {
     "temp_alarm": 50.0,
     "hum_warning": 20.0,
     "hum_alarm": 10.0,
+    # MQ-5 thresholds — may need recalibration (different sensitivity curve than MQ-2)
     "gas_warning": 500,
     "gas_alarm": 800,
     "yolo_fire_warning": 0.6,
