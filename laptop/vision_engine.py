@@ -21,6 +21,15 @@ class VisionEngine:
         try:
             from ultralytics import YOLO
             self.model = YOLO(YOLO_MODEL_PATH)
+            try:
+                import torch
+                if torch.cuda.is_available():
+                    self.model.to("cuda")
+                    print(f"[Vision] Using GPU: {torch.cuda.get_device_name(0)}")
+                else:
+                    print("[Vision] CUDA not available, using CPU")
+            except Exception:
+                print("[Vision] Device setup failed, using CPU")
             self._model_loaded = True
         except Exception as e:
             print(f"[Vision] YOLO model not loaded ({e}). Running without detection.")
@@ -41,7 +50,7 @@ class VisionEngine:
         self._frame = frame
 
         if self._model_loaded and self._frame_count % YOLO_FRAME_INTERVAL == 0:
-            results = self.model(frame, verbose=False)[0]
+            results = self.model(frame, device=0, verbose=False)[0]
             dets = []
             for box in results.boxes:
                 cls_id = int(box.cls[0])
@@ -60,7 +69,7 @@ class VisionEngine:
 
         frame = self._frame.copy()
         if self._model_loaded:
-            results = self.model(frame, verbose=False)[0]
+            results = self.model(frame, device=0, verbose=False)[0]
             frame = results.plot()
         return frame
 
