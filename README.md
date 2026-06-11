@@ -6,7 +6,7 @@ An edge AI prototype that detects fire and smoke using sensor data and computer 
 
 - ESP32 DOIT DEVKIT V1
 - DHT11 (temperature & humidity)
-- MQ2 Gas Sensor
+- MQ5 Gas Sensor
 - Traffic Light Module (Red, Yellow, Green)
 - Buzzer
 - Laptop Camera
@@ -58,10 +58,10 @@ The dashboard shows the camera feed with YOLO detections, live sensor readings, 
 | Red LED | GPIO 21 |
 | Yellow LED | GPIO 22 |
 | Green LED | GPIO 23 |
-| MQ2 (Analog) | GPIO 34 |
+| MQ5 (Analog) | GPIO 34 |
 
 ## Notes
 
 - The YOLO model (YOLOv8) is not included by default. Place a trained fire/smoke model at `laptop/models/best.pt` or the path specified in `laptop/config.py`.
-- The MQ2 sensor requires a ~30s warm-up after power-on for stable readings.
+- The MQ5 sensor requires a ~30s warm-up after power-on for stable readings.
 - This is a prototype for academic purposes, not a production safety system.
