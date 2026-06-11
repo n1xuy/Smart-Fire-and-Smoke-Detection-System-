@@ -12,8 +12,8 @@
 
 DHT dht(DHTPIN, DHTTYPE);
 
-const char* WIFI_SSID = "YOUR_WIFI_SSID";
-const char* WIFI_PASS = "YOUR_WIFI_PASSWORD";
+const char* WIFI_SSID = "ssid";
+const char* WIFI_PASS = "password";
 const char* MQTT_BROKER = "broker.emqx.io";
 const int MQTT_PORT = 1883;
 const char* TOPIC_SENSOR = "smoke_detector/esp32/sensor";
@@ -24,6 +24,7 @@ PubSubClient mqtt(wifiClient);
 
 unsigned long lastSensorSend = 0;
 const unsigned long SENSOR_INTERVAL = 500;
+int buzzerMode = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -37,7 +38,7 @@ void setup() {
   digitalWrite(GREEN_LED, HIGH);
   digitalWrite(RED_LED, LOW);
   digitalWrite(YELLOW_LED, LOW);
-  digitalWrite(BUZZER, LOW);
+  digitalWrite(BUZZER, HIGH);
 
   connectWiFi();
   mqtt.setServer(MQTT_BROKER, MQTT_PORT);
@@ -50,6 +51,14 @@ void loop() {
   }
   mqtt.loop();
 
+  if (buzzerMode == 1) {
+    digitalWrite(BUZZER, LOW);
+  } else if (buzzerMode == 2) {
+    digitalWrite(BUZZER, (millis() % 3000) < 200 ? LOW : HIGH);
+  } else {
+    digitalWrite(BUZZER, HIGH);
+  }
+
   unsigned long now = millis();
   if (now - lastSensorSend >= SENSOR_INTERVAL) {
     lastSensorSend = now;
@@ -57,6 +66,13 @@ void loop() {
     float t = dht.readTemperature();
     float h = dht.readHumidity();
     int g = analogRead(MQ5PIN);
+
+    Serial.print("[DHT11] Temp: "); Serial.print(t); Serial.println(" °C");
+    Serial.print("[DHT11] Hum: "); Serial.print(h); Serial.println(" %");
+    Serial.print("[MQ5] Raw: "); Serial.println(g);
+    if (isnan(t) || isnan(h)) {
+      Serial.println("[DHT11] ERROR - NaN (check wiring)");
+    }
 
     String payload;
     if (isnan(t) || isnan(h)) {
@@ -113,20 +129,21 @@ void callback(char* topic, byte* payload, unsigned int length) {
     digitalWrite(YELLOW_LED, LOW);
     digitalWrite(RED_LED, LOW);
     switch (ledVal) {
-      case 'G': digitalWrite(GREEN_LED, HIGH); break;
-      case 'Y': digitalWrite(YELLOW_LED, HIGH); break;
-      case 'R': digitalWrite(RED_LED, HIGH); break;
+      case 'G': digitalWrite(GREEN_LED, HIGH); Serial.println("[LED] Green ON"); break;
+      case 'Y': digitalWrite(YELLOW_LED, HIGH); Serial.println("[LED] Yellow ON"); break;
+      case 'R': digitalWrite(RED_LED, HIGH); Serial.println("[LED] Red ON"); break;
     }
   }
 
   if (buzIdx >= 0) {
-    int buzVal = msg.substring(buzIdx + 2).toInt();
-    if (buzVal == 1) {
-      digitalWrite(BUZZER, HIGH);
-    } else if (buzVal == 2) {
-      digitalWrite(BUZZER, (millis() / 500) % 2);
+    buzzerMode = msg.substring(buzIdx + 2).toInt();
+    if (buzzerMode == 1) {
+      Serial.println("[BUZZER] Continuous ON");
+    } else if (buzzerMode == 2) {
+      Serial.println("[BUZZER] Intermittent (200ms/3s)");
     } else {
-      digitalWrite(BUZZER, LOW);
+      Serial.println("[BUZZER] OFF");
     }
   }
 }
+
