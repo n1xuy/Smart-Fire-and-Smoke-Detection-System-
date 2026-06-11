@@ -1,7 +1,7 @@
 import os
 
-WIFI_SSID = "YOUR_WIFI_SSID"
-WIFI_PASS = "YOUR_WIFI_PASSWORD"
+WIFI_SSID = "ssid"
+WIFI_PASS = "password"
 
 MQTT_BROKER = "broker.emqx.io"
 MQTT_PORT = 1883
@@ -19,8 +19,8 @@ THRESHOLDS = {
     "hum_warning": 20.0,
     "hum_alarm": 10.0,
     # MQ-5 thresholds — may need recalibration (different sensitivity curve than MQ-2)
-    "gas_warning": 500,
-    "gas_alarm": 800,
+    "gas_warning": 1500,
+    "gas_alarm": 1600,
     "yolo_fire_warning": 0.6,
     "yolo_fire_alarm": 0.7,
     "yolo_smoke_warning": 0.6,

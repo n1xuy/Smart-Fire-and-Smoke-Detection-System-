@@ -33,5 +33,11 @@ class Logger:
         self.writer.writerow([now, t, h, g, fire_conf, smoke_conf, alert_state])
         self.file.flush()
 
+    def log_buzzer_toggle(self, muted):
+        now = datetime.now().isoformat(timespec="milliseconds")
+        status = "MUTED" if muted else "ACTIVE"
+        self.writer.writerow([now, "BUZZER", status, "", "", "", ""])
+        self.file.flush()
+
     def close(self):
         self.file.close()

@@ -14,6 +14,9 @@ class SmartDetectorApp:
         self.vision = VisionEngine()
         self.logger = None
         self._running = False
+        self.buzzer_muted = False
+        self._last_cmd_led = None
+        self._last_cmd_buzzer = None
 
         self.shared_data = {
             "sensor": {},
@@ -22,7 +25,10 @@ class SmartDetectorApp:
             "state_name": "SAFE",
             "led": "G",
             "buzzer": 0,
-            "frame_jpeg": None
+            "frame_jpeg": None,
+            "trigger_reasons": [],
+            "warmup_remaining": 600,
+            "buzzer_muted": False
         }
 
     def start(self):
@@ -58,18 +64,27 @@ class SmartDetectorApp:
                 state = self.decision.evaluate(sensor, detections)
                 led, buzzer = self.decision.get_led_buzzer()
 
+                if self.buzzer_muted:
+                    buzzer = 0
+
+                self.shared_data["buzzer_muted"] = self.buzzer_muted
+
                 self.shared_data["sensor"] = sensor
                 self.shared_data["detections"] = detections
                 self.shared_data["state"] = state
                 self.shared_data["state_name"] = self.decision.get_state_name(state)
+                self.shared_data["trigger_reasons"] = self.decision.trigger_reasons
+                self.shared_data["warmup_remaining"] = self.decision.warmup_remaining()
                 self.shared_data["led"] = led
                 self.shared_data["buzzer"] = buzzer
                 self.shared_data["frame_jpeg"] = frame_jpeg
 
-                if self.decision.state_changed():
+                if led != self._last_cmd_led or buzzer != self._last_cmd_buzzer:
                     self.mqtt.send_command(led, buzzer)
+                    self._last_cmd_led = led
+                    self._last_cmd_buzzer = buzzer
                     state_name = self.decision.get_state_name(state)
-                    print(f"[App] State changed to {state_name}")
+                    print(f"[App] Sent L:{led} B:{buzzer} — {state_name}")
 
                 if self.logger:
                     self.logger.log(sensor, detections, state)
@@ -83,6 +98,13 @@ class SmartDetectorApp:
                 time.sleep(1)
 
         self._cleanup()
+
+    def toggle_buzzer(self):
+        self.buzzer_muted = not self.buzzer_muted
+        state = "MUTED" if self.buzzer_muted else "ACTIVE"
+        print(f"[App] Buzzer {state}")
+        if self.logger:
+            self.logger.log_buzzer_toggle(self.buzzer_muted)
 
     def _cleanup(self):
         print("[App] Shutting down...")

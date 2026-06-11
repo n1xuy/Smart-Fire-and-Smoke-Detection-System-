@@ -50,6 +50,22 @@
                 </div>
 
                 <div class="buzzer-indicator" id="buzzer-indicator">Buzzer: OFF</div>
+                <div class="buzzer-toggle-row">
+                    <button id="buzzer-toggle-btn" class="buzzer-toggle-btn" onclick="toggleBuzzer()">🔊 Buzzer: ON</button>
+                </div>
+                <div class="reasons-box" id="reasons-box">
+                    <div id="warmup-section">
+                        <div class="reasons-title">Gas Sensor Warmup</div>
+                        <div class="warmup-bar-container">
+                            <div class="warmup-bar" id="warmup-bar"></div>
+                        </div>
+                        <div class="warmup-text" id="warmup-text">Waiting...</div>
+                    </div>
+                    <div id="triggers-section">
+                        <div class="reasons-title">Trigger Reasons</div>
+                        <div id="reasons-list" class="reasons-list">No triggers</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -62,7 +78,8 @@
 
         <footer>
             <span>Smart Fire & Smoke Detector v1.0</span>
-            <span id="connection-status">Connected</span>
+            <span id="esp32-status"><span id="esp32-dot" class="dot dot-red"></span> ESP32: <span id="esp32-text">Waiting</span></span>
+            <span id="connection-status">Server: Connected</span>
         </footer>
     </div>
 
@@ -173,6 +190,50 @@
             }
         }
 
+        const WARMUP_DURATION = 600;
+
+        function toggleBuzzer() {
+            fetch('/toggle-buzzer', { method: 'POST' });
+        }
+
+        function updateBuzzerToggle(muted) {
+            const btn = document.getElementById('buzzer-toggle-btn');
+            if (muted) {
+                btn.textContent = '🔇 Buzzer: OFF';
+                btn.classList.add('muted');
+            } else {
+                btn.textContent = '🔊 Buzzer: ON';
+                btn.classList.remove('muted');
+            }
+        }
+
+        function updateReasons(reasons) {
+            const el = document.getElementById('reasons-list');
+            if (!reasons || reasons.length === 0) {
+                el.innerHTML = '<span class="reasons-none">No triggers</span>';
+                return;
+            }
+            el.innerHTML = reasons.map(r => `<div class="reason-item">${r}</div>`).join('');
+        }
+
+        function updateWarmup(remaining) {
+            const warmupSection = document.getElementById('warmup-section');
+            const triggersSection = document.getElementById('triggers-section');
+
+            if (remaining > 0) {
+                warmupSection.style.display = 'block';
+                triggersSection.style.display = 'none';
+                const pct = ((WARMUP_DURATION - remaining) / WARMUP_DURATION * 100).toFixed(0);
+                document.getElementById('warmup-bar').style.width = pct + '%';
+                const mins = Math.floor(remaining / 60);
+                const secs = remaining % 60;
+                document.getElementById('warmup-text').textContent = `⏳ ${mins}m ${secs}s remaining (${pct}%)`;
+            } else {
+                warmupSection.style.display = 'none';
+                triggersSection.style.display = 'block';
+            }
+        }
+
         function updateDetections(detections) {
             const list = document.getElementById('detection-list');
             if (!detections || detections.length === 0) {
@@ -198,6 +259,11 @@
             updateTrafficLight(data.state);
             updateBuzzer(data.buzzer);
             updateDetections(data.detections);
+            updateBuzzerToggle(data.buzzer_muted || false);
+            updateWarmup(data.warmup_remaining || 0);
+            if (!data.warmup_remaining || data.warmup_remaining <= 0) {
+                updateReasons(data.trigger_reasons);
+            }
 
             if (data.frame) {
                 document.getElementById('camera-feed').src = 'data:image/jpeg;base64,' + data.frame;
@@ -220,10 +286,20 @@
             }
 
             chart.update('none');
+
+            const esp32Dot = document.getElementById('esp32-dot');
+            const esp32Text = document.getElementById('esp32-text');
+            if (data.esp32_connected) {
+                esp32Dot.className = 'dot dot-green';
+                esp32Text.textContent = 'Connected';
+            } else {
+                esp32Dot.className = 'dot dot-red';
+                esp32Text.textContent = 'Disconnected';
+            }
         };
 
         evtSource.onerror = function() {
-            document.getElementById('connection-status').textContent = 'Disconnected';
+            document.getElementById('connection-status').textContent = 'Server: Disconnected';
             document.getElementById('connection-status').style.color = '#e74c3c';
         };
     </script>

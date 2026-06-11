@@ -2,7 +2,7 @@ import json
 import time
 import base64
 import threading
-from flask import Flask, render_template, Response
+from flask import Flask, render_template, Response, request
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app_ref = None
@@ -33,21 +33,34 @@ def start_dashboard(app_instance):
                     if frame_jpeg:
                         frame_b64 = base64.b64encode(frame_jpeg).decode("utf-8")
 
+                    t_val = sensor.get("temperature")
+                    h_val = sensor.get("humidity")
+                    g_val = sensor.get("gas")
                     payload = {
-                        "temperature": sensor.get("temperature", "--"),
-                        "humidity": sensor.get("humidity", "--"),
-                        "gas": sensor.get("gas", "--"),
+                        "temperature": t_val if t_val is not None else "--",
+                        "humidity": h_val if h_val is not None else "--",
+                        "gas": g_val if g_val is not None else "--",
                         "detections": detections,
                         "state": state,
                         "state_name": state_name,
                         "led": led,
                         "buzzer": buzzer,
-                        "frame": frame_b64
+                        "frame": frame_b64,
+                        "esp32_connected": app_ref.mqtt.esp32_connected(),
+                        "trigger_reasons": data.get("trigger_reasons", []),
+                        "warmup_remaining": data.get("warmup_remaining", 0),
+                        "buzzer_muted": data.get("buzzer_muted", False)
                     }
                     yield f"data: {json.dumps(payload)}\n\n"
                 time.sleep(0.3)
 
         return Response(generate(), mimetype="text/event-stream")
+
+    @app.route("/toggle-buzzer", methods=["POST"])
+    def toggle_buzzer():
+        if app_ref:
+            app_ref.toggle_buzzer()
+        return {"ok": True, "muted": app_ref.buzzer_muted if app_ref else False}
 
     from config import DASHBOARD_HOST, DASHBOARD_PORT
     app.run(host=DASHBOARD_HOST, port=DASHBOARD_PORT, debug=False, threaded=True)

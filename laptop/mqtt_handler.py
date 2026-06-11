@@ -1,5 +1,6 @@
 import threading
 import re
+import time
 import paho.mqtt.client as mqtt
 from config import MQTT_BROKER, MQTT_PORT, MQTT_TOPIC_SENSOR, MQTT_TOPIC_CONTROL, MQTT_CLIENT_ID
 
@@ -8,8 +9,9 @@ SENSOR_REGEX = re.compile(r"T:([\d\.\-]+)\s+H:([\d\.\-]+)\s+G:(\d+)")
 class MqttHandler:
     def __init__(self):
         self.lock = threading.Lock()
-        self._data = {"temperature": 0.0, "humidity": 0.0, "gas": 0}
+        self._data = {"temperature": None, "humidity": None, "gas": None}
         self._connected = False
+        self.last_seen = 0.0
         self.client = mqtt.Client(client_id=MQTT_CLIENT_ID)
         self.client.on_connect = self._on_connect
         self.client.on_message = self._on_message
@@ -35,6 +37,7 @@ class MqttHandler:
                     self._data["temperature"] = float(t_str)
                     self._data["humidity"] = float(h_str)
                 self._data["gas"] = int(g_str)
+                self.last_seen = time.time()
 
     def connect(self):
         try:
@@ -56,6 +59,11 @@ class MqttHandler:
             print(f"[MQTT] Published: {payload}")
         else:
             print(f"[MQTT] Publish failed, rc={result.rc}")
+
+    def esp32_connected(self, timeout=10):
+        if self.last_seen == 0:
+            return False
+        return time.time() - self.last_seen < timeout
 
     def close(self):
         self.client.loop_stop()
