@@ -14,7 +14,9 @@ An edge AI prototype that detects fire and smoke using sensor data and computer 
 
 ## How It Works
 
-The ESP32 reads temperature, humidity, and gas levels then sends the data over USB Serial to the laptop. The laptop runs YOLOv8 on the camera feed to detect fire and smoke visually. A decision engine combines both inputs and commands the ESP32 to light up the traffic light and buzzer accordingly.
+The ESP32 reads temperature, humidity, and gas levels then publishes the data over MQTT to the laptop. The laptop runs YOLOv8 on the camera feed to detect fire and smoke visually. A decision engine combines both inputs and commands the ESP32 to light up the traffic light and buzzer accordingly.
+
+Communication uses MQTT over WiFi. By default the ESP32 acts as its own WiFi access point — no external router needed.
 
 ## Three Alert States
 
@@ -26,28 +28,52 @@ The ESP32 reads temperature, humidity, and gas levels then sends the data over U
 
 ## How to Use
 
-### 1. Upload ESP32 firmware
+### 1. Set laptop WiFi to static IP
+
+Before connecting to the ESP32, set your laptop's WiFi adapter:
+
+| Setting | Value |
+|---------|-------|
+| IP address | `192.168.4.100` |
+| Subnet mask | `255.255.255.0` |
+| Default gateway | `192.168.4.1` |
+
+### 2. Install Mosquitto MQTT broker
+
+If not already installed, download from https://mosquitto.org/download/ and install. Ensure the Mosquitto service is running (check Windows Services or task manager).
+
+### 3. Upload ESP32 firmware
+
 - Open `firmware/smart_detector.ino` in **Arduino IDE**
-- Install the **DHT sensor library** by Adafruit (Library Manager)
+- Install required libraries (Library Manager):
+  - **DHT sensor library** by Adafruit
+  - **PubSubClient** by Nick O'Leary
 - Select board: `DOIT ESP32 DEVKIT V1`, Port: e.g. `COM4`
 - Click Upload
+- Open Serial Monitor (115200 baud) to verify AP starts
 
-### 2. Install Python dependencies
+### 4. Install Python dependencies
+
 ```bash
 cd laptop
 pip install -r requirements.txt
 ```
 
-### 3. Run the laptop app
+### 5. Connect laptop to ESP32
+
+- In laptop WiFi settings, find and connect to `SmokeDetector_AP`
+- Password: `detector123`
+
+### 6. Run the laptop app
+
 ```bash
 cd laptop
 python main.py
 ```
 
-### 4. Open dashboard
-Go to `http://localhost:5000` in a browser.
+### 7. Open dashboard
 
-The dashboard shows the camera feed with YOLO detections, live sensor readings, the traffic light state, and a rolling chart.
+Go to `http://localhost:5000` in a browser.
 
 ## Wiring
 
@@ -60,8 +86,17 @@ The dashboard shows the camera feed with YOLO detections, live sensor readings, 
 | Green LED | GPIO 23 |
 | MQ5 (Analog) | GPIO 34 |
 
+## Changing Communication Mode
+
+The firmware includes two commented alternatives:
+
+- **Station mode**: Connect to your existing WiFi + public broker (`broker.emqx.io`)
+- **USB Serial**: Connect directly via USB cable (no WiFi needed)
+
+To switch, open `firmware/smart_detector.ino`, comment/uncomment the relevant sections, and re-upload.
+
 ## Notes
 
-- The YOLO model (YOLOv8) is not included by default. Place a trained fire/smoke model at `laptop/models/best.pt` or the path specified in `laptop/config.py`.
-- The MQ5 sensor requires a ~30s warm-up after power-on for stable readings.
+- The YOLO model is not included. Place a trained fire/smoke model at `laptop/models/best.pt` or the path in `laptop/config.py`.
+- The MQ5 sensor requires a ~30s warm-up after power-on.
 - This is a prototype for academic purposes, not a production safety system.

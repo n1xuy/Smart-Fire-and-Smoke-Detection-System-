@@ -1,3 +1,8 @@
+// ===== Communication Mode Selector =====
+// Uncomment ONLY ONE of the following modes. Comment out the rest.
+#define MODE_AP       // MQTT over ESP32 access point (default)
+// #define MODE_SERIAL  // USB Serial (no WiFi)
+
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <DHT.h>
@@ -12,9 +17,14 @@
 
 DHT dht(DHTPIN, DHTTYPE);
 
-const char* WIFI_SSID = "ssid";
-const char* WIFI_PASS = "password";
-const char* MQTT_BROKER = "broker.emqx.io";
+#ifdef MODE_AP
+const char* AP_SSID = "SmokeDetector_AP";
+const char* AP_PASS = "detector123";
+const IPAddress AP_IP(192, 168, 4, 1);
+const IPAddress AP_SUBNET(255, 255, 255, 0);
+const char* MQTT_BROKER = "192.168.4.100";
+#endif
+
 const int MQTT_PORT = 1883;
 const char* TOPIC_SENSOR = "smoke_detector/esp32/sensor";
 const char* TOPIC_CONTROL = "smoke_detector/esp32/control";
@@ -40,24 +50,25 @@ void setup() {
   digitalWrite(YELLOW_LED, LOW);
   digitalWrite(BUZZER, HIGH);
 
-  connectWiFi();
-  mqtt.setServer(MQTT_BROKER, MQTT_PORT);
-  mqtt.setCallback(callback);
+  #ifdef MODE_AP
+    setupAP();
+  #endif
+
+  #if !defined(MODE_SERIAL)
+    mqtt.setServer(MQTT_BROKER, MQTT_PORT);
+    mqtt.setCallback(callback);
+  #endif
 }
 
 void loop() {
-  if (!mqtt.connected()) {
-    connectMQTT();
-  }
-  mqtt.loop();
+  #if !defined(MODE_SERIAL)
+    if (!mqtt.connected()) {
+      connectMQTT();
+    }
+    mqtt.loop();
+  #endif
 
-  if (buzzerMode == 1) {
-    digitalWrite(BUZZER, LOW);
-  } else if (buzzerMode == 2) {
-    digitalWrite(BUZZER, (millis() % 3000) < 200 ? LOW : HIGH);
-  } else {
-    digitalWrite(BUZZER, HIGH);
-  }
+  handleBuzzer();
 
   unsigned long now = millis();
   if (now - lastSensorSend >= SENSOR_INTERVAL) {
@@ -81,20 +92,68 @@ void loop() {
       payload = "T:" + String(t, 2) + " H:" + String(h, 2) + " G:" + String(g);
     }
 
-    mqtt.publish(TOPIC_SENSOR, payload.c_str());
-    Serial.println("[MQTT] Published: " + payload);
+    #if defined(MODE_SERIAL)
+      Serial.println(payload);
+    #else
+      mqtt.publish(TOPIC_SENSOR, payload.c_str());
+      Serial.println("[MQTT] Published: " + payload);
+    #endif
+  }
+
+  #if defined(MODE_SERIAL)
+    handleSerialCommand();
+  #endif
+}
+
+void handleBuzzer() {
+  if (buzzerMode == 1) {
+    digitalWrite(BUZZER, LOW);
+  } else if (buzzerMode == 2) {
+    digitalWrite(BUZZER, (millis() % 3000) < 200 ? LOW : HIGH);
+  } else {
+    digitalWrite(BUZZER, HIGH);
   }
 }
 
-void connectWiFi() {
-  Serial.print("Connecting to WiFi");
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+#ifdef MODE_SERIAL
+void handleSerialCommand() {
+  if (Serial.available()) {
+    String line = Serial.readStringUntil('\n');
+    line.trim();
+    int ledIdx = line.indexOf("L:");
+    int buzIdx = line.indexOf("B:");
+    if (ledIdx >= 0) {
+      char ledVal = line.charAt(ledIdx + 2);
+      digitalWrite(GREEN_LED, LOW);
+      digitalWrite(YELLOW_LED, LOW);
+      digitalWrite(RED_LED, LOW);
+      switch (ledVal) {
+        case 'G': digitalWrite(GREEN_LED, HIGH); Serial.println("[LED] Green ON"); break;
+        case 'Y': digitalWrite(YELLOW_LED, HIGH); Serial.println("[LED] Yellow ON"); break;
+        case 'R': digitalWrite(RED_LED, HIGH); Serial.println("[LED] Red ON"); break;
+      }
+    }
+    if (buzIdx >= 0) {
+      buzzerMode = line.substring(buzIdx + 2).toInt();
+      if (buzzerMode == 1) Serial.println("[BUZZER] Continuous ON");
+      else if (buzzerMode == 2) Serial.println("[BUZZER] Intermittent (200ms/3s)");
+      else Serial.println("[BUZZER] OFF");
+    }
   }
-  Serial.println("\nWiFi connected. IP: " + WiFi.localIP().toString());
 }
+#endif
+
+#ifdef MODE_AP
+void setupAP() {
+  Serial.print("Starting AP: ");
+  Serial.println(AP_SSID);
+  WiFi.mode(WIFI_AP);
+  WiFi.softAPConfig(AP_IP, AP_IP, AP_SUBNET);
+  WiFi.softAP(AP_SSID, AP_PASS);
+  Serial.print("AP IP: ");
+  Serial.println(WiFi.softAPIP());
+}
+#endif
 
 void connectMQTT() {
   while (!mqtt.connected()) {
@@ -146,4 +205,3 @@ void callback(char* topic, byte* payload, unsigned int length) {
     }
   }
 }
-
