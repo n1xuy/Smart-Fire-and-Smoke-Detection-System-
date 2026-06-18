@@ -36,6 +36,7 @@ def start_dashboard(app_instance):
                     t_val = sensor.get("temperature")
                     h_val = sensor.get("humidity")
                     g_val = sensor.get("gas")
+                    latency = data.get("latency_ms")
                     payload = {
                         "temperature": t_val if t_val is not None else "--",
                         "humidity": h_val if h_val is not None else "--",
@@ -49,7 +50,9 @@ def start_dashboard(app_instance):
                         "esp32_connected": app_ref.mqtt.esp32_connected(),
                         "trigger_reasons": data.get("trigger_reasons", []),
                         "warmup_remaining": data.get("warmup_remaining", 0),
-                        "buzzer_muted": data.get("buzzer_muted", False)
+                        "buzzer_muted": data.get("buzzer_muted", False),
+                        "latency_ms": latency if latency is not None else "--",
+                        "events": data.get("events", [])
                     }
                     yield f"data: {json.dumps(payload)}\n\n"
                 time.sleep(0.3)

@@ -4,6 +4,7 @@ MQTT_BROKER = "127.0.0.1"
 MQTT_PORT = 1883
 MQTT_TOPIC_SENSOR = "smoke_detector/esp32/sensor"
 MQTT_TOPIC_CONTROL = "smoke_detector/esp32/control"
+MQTT_TOPIC_PONG = "smoke_detector/esp32/pong"
 MQTT_CLIENT_ID = "laptop_ai_host"
 
 CAMERA_ID = 0

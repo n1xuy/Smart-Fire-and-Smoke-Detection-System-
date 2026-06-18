@@ -11,7 +11,10 @@
     <div class="container">
         <header>
             <h1>Smart Fire & Smoke Detector</h1>
-            <span id="status-badge" class="badge badge-safe">SAFE</span>
+            <div class="header-right">
+                <span id="latency-display" class="latency-badge">-- ms</span>
+                <span id="status-badge" class="badge badge-safe">SAFE</span>
+            </div>
         </header>
 
         <div class="main-grid">
@@ -73,6 +76,16 @@
             <h2>History (last 60s)</h2>
             <div class="chart-container">
                 <canvas id="sensor-chart"></canvas>
+            </div>
+        </div>
+
+        <div class="card event-card">
+            <h2>Event Log</h2>
+            <div class="event-container" id="event-log">
+                <div class="event-row event-header">
+                    <span class="event-time">Time</span>
+                    <span class="event-msg">Event</span>
+                </div>
             </div>
         </div>
 
@@ -264,6 +277,8 @@
             if (!data.warmup_remaining || data.warmup_remaining <= 0) {
                 updateReasons(data.trigger_reasons);
             }
+            updateLatency(data.latency_ms);
+            updateEvents(data.events || []);
 
             if (data.frame) {
                 document.getElementById('camera-feed').src = 'data:image/jpeg;base64,' + data.frame;
@@ -297,6 +312,41 @@
                 esp32Text.textContent = 'Disconnected';
             }
         };
+
+        function updateLatency(ms) {
+            const el = document.getElementById('latency-display');
+            if (ms === '--' || ms === null || ms === undefined) {
+                el.textContent = '-- ms';
+                el.className = 'latency-badge';
+                return;
+            }
+            el.textContent = ms + ' ms';
+            el.className = 'latency-badge';
+            if (ms < 20) el.classList.add('latency-good');
+            else if (ms < 50) el.classList.add('latency-ok');
+            else el.classList.add('latency-poor');
+        }
+
+        function updateEvents(events) {
+            const container = document.getElementById('event-log');
+            const header = container.querySelector('.event-header');
+            container.innerHTML = '';
+            container.appendChild(header);
+            events.forEach(function(e) {
+                const row = document.createElement('div');
+                row.className = 'event-row';
+                const timeSpan = document.createElement('span');
+                timeSpan.className = 'event-time';
+                timeSpan.textContent = e.time;
+                const msgSpan = document.createElement('span');
+                msgSpan.className = 'event-msg';
+                msgSpan.textContent = e.msg;
+                row.appendChild(timeSpan);
+                row.appendChild(msgSpan);
+                container.appendChild(row);
+            });
+            container.scrollTop = container.scrollHeight;
+        }
 
         evtSource.onerror = function() {
             document.getElementById('connection-status').textContent = 'Server: Disconnected';
