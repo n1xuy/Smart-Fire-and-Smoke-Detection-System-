@@ -28,6 +28,7 @@ const char* MQTT_BROKER = "192.168.4.100";
 const int MQTT_PORT = 1883;
 const char* TOPIC_SENSOR = "smoke_detector/esp32/sensor";
 const char* TOPIC_CONTROL = "smoke_detector/esp32/control";
+const char* TOPIC_PONG = "smoke_detector/esp32/pong";
 
 WiFiClient wifiClient;
 PubSubClient mqtt(wifiClient);
@@ -178,6 +179,14 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
   msg.trim();
   Serial.println("[MQTT] Received: " + msg);
+
+  int pingIdx = msg.indexOf("P:");
+  if (pingIdx >= 0) {
+    String pingVal = msg.substring(pingIdx + 2);
+    pingVal.trim();
+    mqtt.publish(TOPIC_PONG, pingVal.c_str());
+    Serial.println("[PONG] Echoed: " + pingVal);
+  }
 
   int ledIdx = msg.indexOf("L:");
   int buzIdx = msg.indexOf("B:");
