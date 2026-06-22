@@ -87,7 +87,6 @@ def train(dataset_path: Path, model_size: str = "s", epochs: int = 150, imgsz: i
 
     data_yaml = str(_find_yaml(dataset_path))
 
-    # Set optimized batch size for GPU
     batch_size = 32 if device == "cuda" else 8
 
     model.train(
@@ -114,7 +113,7 @@ def train(dataset_path: Path, model_size: str = "s", epochs: int = 150, imgsz: i
         mosaic=1.0,
         close_mosaic=10,
         val=True,
-        workers=4,  # Optimized CPU workers
+        workers=4,
     )
 
     best_src = MODELS_DIR / "training" / "fire_smoke" / "weights" / "best.pt"
