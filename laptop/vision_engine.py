@@ -50,7 +50,7 @@ class VisionEngine:
         self._frame = frame
 
         if self._model_loaded and self._frame_count % YOLO_FRAME_INTERVAL == 0:
-            results = self.model(frame, device=0, verbose=False)[0]
+            results = self.model(frame, device=self.model.device, verbose=False)[0]
             dets = []
             for box in results.boxes:
                 cls_id = int(box.cls[0])
@@ -69,7 +69,7 @@ class VisionEngine:
 
         frame = self._frame.copy()
         if self._model_loaded:
-            results = self.model(frame, device=0, verbose=False)[0]
+            results = self.model(frame, device=self.model.device, verbose=False)[0]
             frame = results.plot()
         return frame
 
