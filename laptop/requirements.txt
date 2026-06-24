@@ -2,3 +2,7 @@ paho-mqtt>=1.6.0
 opencv-python>=4.8.0
 ultralytics>=8.0.0
 flask>=3.0.0
+torch>=2.0.0
+numpy>=1.24.0
+roboflow>=1.0.0
+pyyaml>=6.0
