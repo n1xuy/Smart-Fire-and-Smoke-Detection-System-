@@ -10,15 +10,6 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def collect_images(camera_id: int = 0, class_name: str = "fire"):
-    """
-    Capture images from camera for dataset collection.
-
-    Controls:
-      SPACE  - save current frame as {class_name}_XXXX.jpg
-      f      - switch class to 'fire'
-      s      - switch class to 'smoke'
-      ESC/q  - quit
-    """
     cap = cv2.VideoCapture(camera_id)
     if not cap.isOpened():
         print(f"[Collect] Cannot open camera {camera_id}")
