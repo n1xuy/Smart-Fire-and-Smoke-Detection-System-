@@ -8,12 +8,14 @@ class VisionEngine:
         self.model = None
         self._detections = []
         self._frame = None
+        self._annotated_frame = None
         self._frame_count = 0
         self._running = False
         self._model_loaded = False
 
     def start(self):
-        self.cap = cv2.VideoCapture(CAMERA_ID)
+        self.cap = cv2.VideoCapture(CAMERA_ID, cv2.CAP_DSHOW)
+        self.cap.set(cv2.CAP_PROP_FPS, 30)
         if not self.cap.isOpened():
             print("[Vision] Could not open camera")
             return False
@@ -59,19 +61,17 @@ class VisionEngine:
                 if label.lower() in ("fire", "smoke"):
                     dets.append({"label": label.lower(), "confidence": conf})
             self._detections = dets
+            self._annotated_frame = results.plot()
 
     def get_detections(self):
         return list(self._detections)
 
     def get_annotated_frame(self):
-        if self._frame is None:
-            return None
-
-        frame = self._frame.copy()
-        if self._model_loaded:
-            results = self.model(frame, device=self.model.device, verbose=False)[0]
-            frame = results.plot()
-        return frame
+        if self._annotated_frame is not None:
+            return self._annotated_frame
+        if self._frame is not None:
+            return self._frame.copy()
+        return None
 
     def get_frame_jpeg(self):
         frame = self.get_annotated_frame()

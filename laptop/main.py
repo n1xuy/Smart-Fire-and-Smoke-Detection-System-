@@ -128,7 +128,7 @@ class SmartDetectorApp:
                 if self.logger:
                     self.logger.log(sensor, detections, state)
 
-                time.sleep(0.1)
+                time.sleep(0.033)
 
             except KeyboardInterrupt:
                 break
