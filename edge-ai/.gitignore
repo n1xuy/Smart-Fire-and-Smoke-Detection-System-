@@ -1,0 +1,6 @@
+/logs
+__pycache__/
+train.py
+evaluate_model.py
+/eval_results
+

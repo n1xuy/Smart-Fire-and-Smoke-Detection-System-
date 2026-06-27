@@ -19,10 +19,10 @@ THRESHOLDS = {
     # MQ-5 thresholds — may need recalibration (different sensitivity curve than MQ-2)
     "gas_warning": 1500,
     "gas_alarm": 1600,
-    "yolo_fire_warning": 0.6,
-    "yolo_fire_alarm": 0.7,
-    "yolo_smoke_warning": 0.6,
-    "yolo_smoke_alarm": 0.75
+    "yolo_fire_warning": 0.2,
+    "yolo_fire_alarm": 0.5,
+    "yolo_smoke_warning": 0.5,
+    "yolo_smoke_alarm": 0.6
 }
 
 STATE_SAFE = 0

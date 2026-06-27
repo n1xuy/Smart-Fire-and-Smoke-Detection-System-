@@ -55,7 +55,7 @@ If not already installed, download from https://mosquitto.org/download/ and inst
 ### 4. Install Python dependencies
 
 ```bash
-cd laptop
+cd edge-ai
 pip install -r requirements.txt
 ```
 
@@ -67,7 +67,7 @@ pip install -r requirements.txt
 ### 6. Run the laptop app
 
 ```bash
-cd laptop
+cd edge-ai
 python main.py
 ```
 
@@ -90,13 +90,12 @@ Go to `http://localhost:5000` in a browser.
 
 The firmware includes two commented alternatives:
 
-- **Station mode**: Connect to your existing WiFi + public broker (`broker.emqx.io`)
 - **USB Serial**: Connect directly via USB cable (no WiFi needed)
 
 To switch, open `firmware/smart_detector.ino`, comment/uncomment the relevant sections, and re-upload.
 
 ## Notes
 
-- The YOLO model is not included. Place a trained fire/smoke model at `laptop/models/best.pt` or the path in `laptop/config.py`.
+- The YOLO model is not included. Place a trained fire/smoke model at `edge-ai/models/best.pt` or the path in `edge-ai/config.py`.
 - The MQ5 sensor requires a ~30s warm-up after power-on.
 - This is a prototype for academic purposes, not a production safety system.
