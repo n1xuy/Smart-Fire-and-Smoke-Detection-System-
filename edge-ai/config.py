@@ -16,7 +16,6 @@ THRESHOLDS = {
     "temp_alarm": 50.0,
     "hum_warning": 20.0,
     "hum_alarm": 10.0,
-    # MQ-5 thresholds — may need recalibration (different sensitivity curve than MQ-2)
     "gas_warning": 1500,
     "gas_alarm": 1600,
     "yolo_fire_warning": 0.2,
